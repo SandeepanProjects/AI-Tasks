@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: recommendation-api
+
+spec:
+  replicas: 3
+
+  selector:
+    matchLabels:
+      app: recommendation-api
+
+  template:
+    metadata:
+      labels:
+        app: recommendation-api
+
+    spec:
+      containers:
+      - name: api
+        image: recommendation-system:latest
+        ports:
+        - containerPort: 8000
+
+        resources:
+          limits:
+            cpu: "2"
+            memory: "4Gi"

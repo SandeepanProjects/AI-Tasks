@@ -1,0 +1,17 @@
+fastapi
+uvicorn
+numpy
+pandas
+scikit-learn
+xgboost
+torch
+faiss-cpu
+redis
+kafka-python
+prometheus-client
+loguru
+pytest
+joblib
+pydantic
+python-dotenv
+httpx
