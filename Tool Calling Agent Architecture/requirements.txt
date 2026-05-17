@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+openai
+pydantic
+pydantic-settings
+httpx
+redis
+tenacity
+structlog
+pytest
+pytest-asyncio
