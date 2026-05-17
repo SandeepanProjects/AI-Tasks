@@ -1,0 +1,17 @@
+fastapi
+uvicorn
+openai
+psycopg2-binary
+sqlalchemy
+pgvector
+redis
+tiktoken
+numpy
+pandas
+python-dotenv
+httpx
+tenacity
+rank-bm25
+sentence-transformers
+pytest
+structlog
