@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: advisor-api
+
+spec:
+  replicas: 3
+
+  selector:
+    matchLabels:
+      app: advisor-api
+
+  template:
+    metadata:
+      labels:
+        app: advisor-api
+
+    spec:
+      containers:
+
+        - name: api
+
+          image: advisor-copilot:latest
+
+          ports:
+            - containerPort: 8000
+
+          env:
+            - name: ENVIRONMENT
+              value: "production"

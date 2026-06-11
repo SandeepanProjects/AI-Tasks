@@ -1,0 +1,44 @@
+version: "3.9"
+
+services:
+
+  api:
+
+    build: .
+
+    ports:
+      - "8000:8000"
+
+    env_file:
+      - .env
+
+    depends_on:
+      - postgres
+      - redis
+      - qdrant
+
+  postgres:
+
+    image: postgres:16
+
+    environment:
+      POSTGRES_DB: advisor_db
+      POSTGRES_USER: advisor
+      POSTGRES_PASSWORD: advisor123
+
+    ports:
+      - "5432:5432"
+
+  redis:
+
+    image: redis:7
+
+    ports:
+      - "6379:6379"
+
+  qdrant:
+
+    image: qdrant/qdrant
+
+    ports:
+      - "6333:6333"
