@@ -1,0 +1,10 @@
+[
+  {
+    "question": "Should a 30 year old invest 80 percent in equities?",
+    "ground_truth": "A young investor with long investment horizon may allocate higher percentage to equities depending on risk tolerance."
+  },
+  {
+    "question": "What is diversification?",
+    "ground_truth": "Diversification reduces portfolio risk by investing across multiple asset classes."
+  }
+]

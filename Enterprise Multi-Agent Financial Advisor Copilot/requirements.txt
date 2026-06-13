@@ -43,3 +43,21 @@ python-docx==1.2.0
 numpy==2.3.1
 
 tenacity==9.1.2
+
+pydantic-settings>=2.2.1
+
+sqlalchemy>=2.0.30
+
+asyncpg>=0.29.0
+
+python-jose[cryptography]>=3.3.0
+
+redis>=5.0.4
+
+alembic>=1.13.1
+
+ragas>=0.2.10
+deepeval>=1.0.0
+datasets>=3.0.0
+pandas>=2.2.2
+openpyxl>=3.1.5

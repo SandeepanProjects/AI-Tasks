@@ -1,0 +1,1418 @@
+The best way to understand this project is **not file-by-file first**, but **request-by-request**. Once you understand one user request flowing through the system, every file suddenly makes sense.
+
+# Imagine User Asks
+
+```text
+Should a 55-year-old invest 80% of their portfolio in equities?
+```
+
+Let's trace this request through the entire codebase.
+
+---
+
+# STEP 1: FastAPI Receives Request
+
+File:
+
+```text
+app/api/routes/chat.py
+```
+
+Example:
+
+```python
+@router.post("/chat")
+async def chat(
+    request: ChatRequest
+):
+    return await chat_service.chat(
+        request.question
+    )
+```
+
+Purpose:
+
+```text
+Receive Request
+Validate Input
+Call Business Logic
+```
+
+Think:
+
+```text
+Controller Layer
+```
+
+It should contain almost no business logic.
+
+---
+
+# STEP 2: JWT Authentication
+
+File:
+
+```text
+app/auth/dependencies.py
+```
+
+Runs before chat endpoint.
+
+Example:
+
+```python
+get_current_user()
+```
+
+JWT token arrives:
+
+```text
+Bearer eyJ...
+```
+
+Code verifies:
+
+```python
+JWTService.verify_token()
+```
+
+Output:
+
+```python
+{
+    "user_id":"123",
+    "role":"advisor"
+}
+```
+
+Now system knows:
+
+```text
+Who is asking?
+```
+
+---
+
+# STEP 3: Chat Service Starts
+
+File:
+
+```text
+app/services/chat_service.py
+```
+
+This is the brain.
+
+Everything is orchestrated here.
+
+Example:
+
+```python
+result = await chat_service.chat(
+    question
+)
+```
+
+Think:
+
+```text
+Conductor of Orchestra
+```
+
+---
+
+# STEP 4: Redis Cache Check
+
+File:
+
+```text
+app/memory/retrieval_cache.py
+```
+
+Code:
+
+```python
+cached = await cache.get(
+    question
+)
+```
+
+Purpose:
+
+```text
+Have we answered this before?
+```
+
+---
+
+If yes:
+
+```text
+Return immediately
+```
+
+No OpenAI cost.
+
+No retrieval cost.
+
+---
+
+If no:
+
+Continue.
+
+---
+
+# STEP 5: Create Embedding
+
+File:
+
+```text
+app/embeddings/embedder.py
+```
+
+Input:
+
+```text
+Should a 55-year-old invest 80% in equities?
+```
+
+OpenAI converts it to:
+
+```python
+[
+ 0.23,
+ 0.44,
+ 0.82,
+ ...
+]
+```
+
+This vector captures meaning.
+
+Not keywords.
+
+---
+
+# STEP 6: Retrieval Pipeline Starts
+
+File:
+
+```text
+app/rag/retrieval_pipeline.py
+```
+
+This is the most important AI part.
+
+---
+
+## Retrieval Part 1
+
+BM25
+
+File:
+
+```text
+app/rag/bm25_retriever.py
+```
+
+Searches:
+
+```text
+55 year old
+equities
+portfolio
+```
+
+keyword matches.
+
+---
+
+Returns:
+
+```text
+Document 5
+Document 17
+Document 23
+```
+
+---
+
+## Retrieval Part 2
+
+Vector Search
+
+File:
+
+```text
+app/rag/qdrant_store.py
+```
+
+Searches semantic meaning.
+
+Finds:
+
+```text
+Retirement Planning Guide
+
+Age Based Allocation
+
+Risk Management Handbook
+```
+
+even if exact words differ.
+
+---
+
+# STEP 7: Reciprocal Rank Fusion
+
+File:
+
+```text
+app/rag/fusion.py
+```
+
+Combines:
+
+```text
+BM25 Results
++
+Vector Results
+```
+
+Why?
+
+BM25:
+
+```text
+Good at keywords
+```
+
+Vector:
+
+```text
+Good at meaning
+```
+
+Together:
+
+```text
+Best of both worlds
+```
+
+---
+
+# STEP 8: Reranker
+
+File:
+
+```text
+app/rag/reranker.py
+```
+
+Suppose we retrieved:
+
+```text
+30 chunks
+```
+
+Most are not perfect.
+
+Reranker scores:
+
+```text
+Question
+vs
+Chunk
+```
+
+Example:
+
+```text
+Chunk 1 = 95%
+
+Chunk 2 = 91%
+
+Chunk 3 = 87%
+
+Chunk 4 = 30%
+```
+
+Keeps:
+
+```text
+Top 5
+```
+
+This dramatically improves answer quality.
+
+---
+
+# STEP 9: Multi-Agent System
+
+File:
+
+```text
+app/graph/workflow.py
+```
+
+Now context is available.
+
+Instead of:
+
+```text
+One LLM
+```
+
+we use:
+
+```text
+Many Specialists
+```
+
+---
+
+# Risk Agent
+
+File:
+
+```text
+app/agents/risk_agent.py
+```
+
+Prompt:
+
+```text
+Analyze investment risk.
+```
+
+Output:
+
+```text
+80% equities at age 55
+creates volatility risk.
+```
+
+---
+
+# Research Agent
+
+File:
+
+```text
+app/agents/research_agent.py
+```
+
+Prompt:
+
+```text
+Analyze investment research.
+```
+
+Output:
+
+```text
+Historical studies suggest
+lower equity allocation.
+```
+
+---
+
+# Compliance Agent
+
+File:
+
+```text
+app/agents/compliance_agent.py
+```
+
+Prompt:
+
+```text
+Check regulatory concerns.
+```
+
+Output:
+
+```text
+Must disclose risks.
+```
+
+---
+
+# Parallel Execution
+
+Inside workflow:
+
+```python
+await asyncio.gather(
+    risk_agent.run(),
+    research_agent.run(),
+    compliance_agent.run()
+)
+```
+
+This means:
+
+```text
+All run simultaneously
+```
+
+instead of:
+
+```text
+One after another
+```
+
+Faster.
+
+---
+
+# STEP 10: Report Agent
+
+File:
+
+```text
+app/agents/report_agent.py
+```
+
+Input:
+
+```text
+Risk Output
+Research Output
+Compliance Output
+```
+
+Combines everything.
+
+Produces:
+
+```text
+Final Financial Advice
+```
+
+---
+
+# STEP 11: OpenAI Generates Final Response
+
+File:
+
+```text
+app/llm/openai_provider.py
+```
+
+Calls:
+
+```python
+client.chat.completions.create()
+```
+
+with:
+
+```text
+Question
++
+Retrieved Context
++
+Agent Outputs
+```
+
+Output:
+
+```text
+Final Recommendation
+```
+
+---
+
+# STEP 12: Cache Result
+
+File:
+
+```text
+app/memory/retrieval_cache.py
+```
+
+Stores:
+
+```python
+{
+  "question": "...",
+  "answer": "..."
+}
+```
+
+in Redis.
+
+Next request becomes instant.
+
+---
+
+# STEP 13: MLflow Logging
+
+File:
+
+```text
+app/mlops/mlflow_tracker.py
+```
+
+Logs:
+
+```text
+Question
+Latency
+Model
+Metrics
+```
+
+Think:
+
+```text
+Experiment Tracking
+```
+
+---
+
+# STEP 14: OpenTelemetry
+
+File:
+
+```text
+app/observability/tracing.py
+```
+
+Tracks:
+
+```text
+Request Started
+
+Retrieval Started
+
+OpenAI Started
+
+Response Returned
+```
+
+Useful for debugging.
+
+---
+
+# STEP 15: Prometheus Metrics
+
+File:
+
+```text
+app/observability/metrics.py
+```
+
+Updates:
+
+```text
+Request Count
+
+Latency
+
+Token Usage
+```
+
+---
+
+# STEP 16: PostgreSQL
+
+File:
+
+```text
+app/db/
+```
+
+Stores:
+
+```text
+Users
+Chats
+Audit Logs
+```
+
+Not vectors.
+
+Not embeddings.
+
+Only structured data.
+
+---
+
+# STEP 17: Evaluation System
+
+File:
+
+```text
+app/evaluation/
+```
+
+Runs offline.
+
+Question:
+
+```text
+Was answer good?
+```
+
+Measures:
+
+```text
+Faithfulness
+
+Relevance
+
+Precision
+
+Recall
+```
+
+using tools like:
+
+* [RAGAS](https://github.com/explodinggradients/ragas?utm_source=chatgpt.com)
+* [DeepEval](https://github.com/confident-ai/deepeval?utm_source=chatgpt.com)
+
+---
+
+# Interview Cheat Sheet
+
+When asked:
+
+### "Explain your project architecture"
+
+Answer:
+
+```text
+User Query
+↓
+FastAPI
+↓
+JWT Authentication
+↓
+Redis Cache
+↓
+Hybrid Retrieval
+    ├─ BM25
+    ├─ Vector Search (Qdrant)
+    ├─ Reciprocal Rank Fusion
+    └─ Cross Encoder Reranking
+↓
+LangGraph Multi-Agent Workflow
+    ├─ Risk Agent
+    ├─ Research Agent
+    ├─ Compliance Agent
+    └─ Report Agent
+↓
+OpenAI GPT-4o
+↓
+Response
+↓
+Redis Cache
+↓
+MLflow Logging
+↓
+OpenTelemetry + Prometheus
+```
+
+If you can explain that flow confidently and explain **why each component exists**, you'll already sound like a Senior AI Engineer rather than someone who just assembled libraries together.
+
+
+This is exactly what interviewers care about.
+
+Most candidates can say:
+
+> "I used Redis, Qdrant, LangGraph, OpenAI."
+
+Very few can explain:
+
+> **"Why does this component exist? What problem does it solve? What would happen if we removed it?"**
+
+That's what separates a Senior AI Engineer from someone who just followed tutorials.
+
+---
+
+# 1. FastAPI
+
+### Why does it exist?
+
+The AI system needs a way for external applications to communicate with it.
+
+FastAPI exposes APIs.
+
+```text
+User
+ ↓
+POST /chat
+ ↓
+AI System
+```
+
+Without FastAPI:
+
+```text
+No way to interact with the system
+```
+
+---
+
+### Interview Answer
+
+> "FastAPI serves as the API gateway. It handles request validation, authentication, routing, and exposes the AI capabilities through REST endpoints."
+
+---
+
+# 2. JWT Authentication
+
+### Why does it exist?
+
+Financial data is sensitive.
+
+We cannot allow anonymous users.
+
+Need:
+
+```text
+Who is the user?
+What role do they have?
+```
+
+Example:
+
+```text
+Advisor
+Compliance Officer
+Admin
+```
+
+JWT solves:
+
+```text
+Authentication
+Authorization
+```
+
+---
+
+### What happens without JWT?
+
+Anyone can access:
+
+```text
+Portfolio Data
+Investment Reports
+Client Information
+```
+
+Security disaster.
+
+---
+
+### Interview Answer
+
+> "JWT authentication ensures only authorized users can access financial recommendations and enables role-based access control."
+
+---
+
+# 3. PostgreSQL
+
+### Why does it exist?
+
+LLMs are not databases.
+
+Need to store:
+
+```text
+Users
+Chat History
+Audit Logs
+Configurations
+```
+
+Example:
+
+```text
+User: John
+
+Question:
+Should I retire at 60?
+
+Answer:
+...
+```
+
+Stored permanently.
+
+---
+
+### Why not Qdrant?
+
+Qdrant stores vectors.
+
+Not relational data.
+
+---
+
+### Interview Answer
+
+> "PostgreSQL stores transactional and relational data such as users, conversations, audit logs, and application metadata."
+
+---
+
+# 4. Redis
+
+### Why does it exist?
+
+OpenAI calls are expensive.
+
+Suppose:
+
+```text
+100 users ask:
+
+What is SIP?
+```
+
+Without Redis:
+
+```text
+100 OpenAI calls
+```
+
+With Redis:
+
+```text
+1 OpenAI call
+99 cache hits
+```
+
+Huge savings.
+
+---
+
+### Benefits
+
+```text
+Lower Cost
+Lower Latency
+Higher Throughput
+```
+
+---
+
+### Interview Answer
+
+> "Redis acts as a high-speed cache layer that reduces LLM costs and improves response latency by storing frequently accessed responses."
+
+---
+
+# 5. Embeddings
+
+### Why do embeddings exist?
+
+LLMs understand meaning.
+
+Databases understand numbers.
+
+Need a bridge.
+
+Convert:
+
+```text
+Retirement Planning
+```
+
+into:
+
+```text
+[0.43, 0.91, 0.12 ...]
+```
+
+---
+
+### Why?
+
+Allows semantic search.
+
+Example:
+
+```text
+Retirement Planning
+```
+
+can match:
+
+```text
+Post-retirement investment strategy
+```
+
+Even if words differ.
+
+---
+
+### Interview Answer
+
+> "Embeddings transform text into vector representations, enabling semantic similarity search."
+
+---
+
+# 6. Qdrant
+
+### Why does it exist?
+
+Need to store millions of embeddings.
+
+Traditional SQL databases are poor at vector search.
+
+Qdrant is optimized for:
+
+```text
+Nearest Neighbor Search
+```
+
+---
+
+### Example
+
+Query:
+
+```text
+How should I invest near retirement?
+```
+
+Qdrant finds:
+
+```text
+Retirement Guide
+Asset Allocation Study
+```
+
+based on meaning.
+
+---
+
+### Interview Answer
+
+> "Qdrant acts as the vector database, enabling low-latency semantic retrieval of financial knowledge."
+
+---
+
+# 7. BM25
+
+### Why does it exist?
+
+Embeddings are not perfect.
+
+Example:
+
+```text
+Fund XYZ 2025
+```
+
+Needs exact matching.
+
+BM25 excels at:
+
+```text
+Keywords
+Fund Names
+Ticker Symbols
+Numbers
+```
+
+---
+
+### Why not use only vectors?
+
+Vectors may miss:
+
+```text
+HDFC Fund
+SBI Fund
+```
+
+exact identifiers.
+
+---
+
+### Interview Answer
+
+> "BM25 complements vector search by improving retrieval for exact keywords and structured financial terminology."
+
+---
+
+# 8. Vector Search
+
+### Why does it exist?
+
+BM25 only understands words.
+
+Vector search understands intent.
+
+Example:
+
+```text
+How do I prepare financially for retirement?
+```
+
+Can retrieve:
+
+```text
+Retirement Savings Strategy
+```
+
+even without keyword overlap.
+
+---
+
+### Interview Answer
+
+> "Vector retrieval captures semantic meaning and improves recall for conceptually similar content."
+
+---
+
+# 9. Reciprocal Rank Fusion (RRF)
+
+### Why does it exist?
+
+BM25 and Vector Search each make mistakes.
+
+Combine both.
+
+```text
+BM25 Results
++
+Vector Results
+=
+Better Results
+```
+
+---
+
+### Interview Answer
+
+> "RRF combines lexical and semantic retrieval results to improve overall retrieval quality."
+
+---
+
+# 10. Reranker
+
+Most important component.
+
+---
+
+### Problem
+
+Initial retrieval returns:
+
+```text
+30 documents
+```
+
+Many are mediocre.
+
+Need:
+
+```text
+Best 5
+```
+
+---
+
+### What does reranker do?
+
+Scores:
+
+```text
+Question
+vs
+Document
+```
+
+More accurately than vector similarity.
+
+---
+
+### Effect
+
+Often improves answer quality dramatically.
+
+---
+
+### Interview Answer
+
+> "Cross-encoder reranking improves context precision by selecting the most relevant documents before generation."
+
+---
+
+# 11. LangGraph
+
+### Why does it exist?
+
+Single-agent systems don't scale well.
+
+Need orchestration.
+
+Example:
+
+```text
+Risk Analysis
+Research
+Compliance
+```
+
+all separate concerns.
+
+LangGraph coordinates them.
+
+---
+
+### Interview Answer
+
+> "LangGraph provides stateful orchestration for complex multi-agent workflows."
+
+---
+
+# 12. Risk Agent
+
+### Why?
+
+Financial recommendations require risk assessment.
+
+Example:
+
+```text
+80% equities at age 60
+```
+
+Potentially dangerous.
+
+Risk Agent specializes in identifying:
+
+```text
+Volatility Risk
+Longevity Risk
+Sequence Risk
+```
+
+---
+
+### Interview Answer
+
+> "The Risk Agent evaluates investment and portfolio risks independently from other analyses."
+
+---
+
+# 13. Research Agent
+
+### Why?
+
+Need evidence-based recommendations.
+
+Looks at:
+
+```text
+Market Studies
+Research Reports
+Historical Data
+```
+
+---
+
+### Interview Answer
+
+> "The Research Agent provides supporting evidence and market intelligence."
+
+---
+
+# 14. Compliance Agent
+
+### Why?
+
+Financial advice is regulated.
+
+Need to ensure:
+
+```text
+Policies
+Regulations
+Disclosures
+```
+
+are respected.
+
+---
+
+### Interview Answer
+
+> "The Compliance Agent validates recommendations against regulatory and organizational policies."
+
+---
+
+# 15. Report Agent
+
+### Why?
+
+Multiple agents produce multiple outputs.
+
+Need one final answer.
+
+Combines:
+
+```text
+Risk
+Research
+Compliance
+```
+
+into a single recommendation.
+
+---
+
+### Interview Answer
+
+> "The Report Agent synthesizes outputs from specialized agents into a coherent final response."
+
+---
+
+# 16. OpenAI GPT
+
+### Why?
+
+Need reasoning and natural language generation.
+
+Retrieval finds facts.
+
+GPT creates:
+
+```text
+Human-readable advice
+```
+
+---
+
+### Interview Answer
+
+> "The LLM performs reasoning, synthesis, and response generation using retrieved context."
+
+---
+
+# 17. MLflow
+
+### Why?
+
+Need to track:
+
+```text
+Prompts
+Latency
+Experiments
+Metrics
+```
+
+Without tracking:
+
+```text
+No idea which model version performs better
+```
+
+---
+
+### Interview Answer
+
+> "MLflow provides experiment tracking and model evaluation monitoring."
+
+---
+
+# 18. OpenTelemetry
+
+### Why?
+
+Need visibility.
+
+If system becomes slow:
+
+```text
+Where is the bottleneck?
+```
+
+OpenTelemetry shows:
+
+```text
+Retrieval
+Reranker
+OpenAI
+Database
+```
+
+latency.
+
+---
+
+### Interview Answer
+
+> "OpenTelemetry enables distributed tracing across the entire AI request lifecycle."
+
+---
+
+# 19. Prometheus
+
+### Why?
+
+Need metrics.
+
+Examples:
+
+```text
+Requests Per Minute
+Latency
+Token Usage
+Cache Hit Rate
+```
+
+---
+
+### Interview Answer
+
+> "Prometheus collects operational metrics used for monitoring and capacity planning."
+
+---
+
+# 20. Evaluation System
+
+### Why?
+
+LLMs can hallucinate.
+
+Need objective quality measurement.
+
+Metrics:
+
+```text
+Faithfulness
+Relevance
+Precision
+Recall
+```
+
+---
+
+### Interview Answer
+
+> "The evaluation framework continuously measures retrieval and generation quality to ensure production reliability."
+
+---
+
+# Staff-Level One-Line Summary
+
+If an interviewer asks:
+
+### "Why did you choose all these components?"
+
+You can answer:
+
+> "I designed the system as a layered architecture where FastAPI provides the API layer, PostgreSQL stores transactional data, Redis optimizes latency through caching, Qdrant enables semantic retrieval, hybrid search improves context quality, LangGraph orchestrates specialized financial agents, OpenAI performs reasoning and generation, and MLflow plus OpenTelemetry provide the observability and governance required for production AI systems."
+
+That's the kind of explanation that demonstrates architectural thinking rather than just knowledge of tools.

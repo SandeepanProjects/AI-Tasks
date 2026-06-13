@@ -26,10 +26,34 @@ jobs:
       - name: Run tests
         run: pytest
 
+      - name: Run Evaluation
+
+        run: |
+
+          python scripts/run_evals.py
+
+      - name: Deployment Gate
+
+        run: |
+
+          python scripts/check_gate.py
+
+      - name: Run Evaluation Suite
+
+         run: |
+
+          python scripts/run_evaluations.py
+
+      - name: Validate Deployment Gate
+
+         run: |
+          python scripts/check_deployment_gate.py
+
       - name: Lint code
         run: |
           pip install flake8
           flake8 app/
+      
 
   build:
 

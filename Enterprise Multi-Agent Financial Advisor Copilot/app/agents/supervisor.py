@@ -22,3 +22,38 @@ class SupervisorAgent:
             routes = ["research"]
 
         return routes
+    
+    
+    
+    class SupervisorAgent:
+
+    async def run(
+        self,
+        state
+    ):
+
+        query = (
+            state["query"]
+            .lower()
+        )
+
+        tasks = []
+
+        if "risk" in query:
+            tasks.append(
+                risk_agent.run(state)
+            )
+
+        if "market" in query:
+            tasks.append(
+                research_agent.run(state)
+            )
+
+        if "compliance" in query:
+            tasks.append(
+                compliance_agent.run(state)
+            )
+
+        return await asyncio.gather(
+            *tasks
+        )

@@ -21,3 +21,41 @@ class Tracer:
             return result
 
         return wrapper
+    
+    
+#     pip install opentelemetry-api
+# pip install opentelemetry-sdk
+
+from functools import wraps
+
+from opentelemetry import trace
+
+
+tracer = trace.get_tracer(
+    "financial-copilot"
+)
+
+
+def traced(span_name):
+
+    def decorator(func):
+
+        @wraps(func)
+
+        async def wrapper(
+            *args,
+            **kwargs
+        ):
+
+            with tracer.start_as_current_span(
+                span_name
+            ):
+
+                return await func(
+                    *args,
+                    **kwargs
+                )
+
+        return wrapper
+
+    return decorator
