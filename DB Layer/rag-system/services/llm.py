@@ -1,4 +1,7 @@
 # services/llm.py
+# Purpose:
+
+# Talk to GPT.
 
 from openai import OpenAI
 

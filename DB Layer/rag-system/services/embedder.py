@@ -1,5 +1,9 @@
 # services/embedder.py
 
+# Purpose:
+
+# Convert text → vectors.
+
 from sentence_transformers import SentenceTransformer
 
 model = SentenceTransformer("all-MiniLM-L6-v2")

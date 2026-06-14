@@ -1,10 +1,13 @@
 # db/qdrant_client.py
+# Purpose:
+
+# Store vectors.
 
 from qdrant_client import QdrantClient
 from qdrant_client.models import PointStruct
 from config import QDRANT_URL, COLLECTION_NAME
 
-client = QdrantClient(url=QDRANT_URL)
+client = QdrantClient(url=QDRANT_URL) #  Connects to Qdrant.
 
 
 def upsert_embedding(id, vector, payload):
