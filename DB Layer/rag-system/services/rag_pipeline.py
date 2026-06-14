@@ -5,6 +5,7 @@ from db.postgres import save_chat
 from services.retriever import retrieve_context
 from services.llm import generate_answer
 
+# Entry point.
 def rag_pipeline(user_id: str, query: str):
 
     cache_key = f"cache:{query}"

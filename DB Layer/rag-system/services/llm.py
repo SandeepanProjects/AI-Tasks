@@ -18,9 +18,27 @@ def generate_answer(context, query):
     {query}
     """
 
+# Sends prompt to GPT.
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[{"role": "user", "content": prompt}]
     )
 
     return response.choices[0].message.content
+
+# Prompt Creation
+# prompt = f"""
+# CONTEXT:
+# {context}
+
+# QUESTION:
+# {query}
+# """
+
+# Example:
+
+# CONTEXT:
+# Machine Learning is subset of AI
+
+# QUESTION:
+# What is ML?
