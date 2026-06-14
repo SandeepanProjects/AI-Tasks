@@ -1,0 +1,1 @@
+pip install fastapi psycopg2-binary redis qdrant-client openai sentence-transformers
