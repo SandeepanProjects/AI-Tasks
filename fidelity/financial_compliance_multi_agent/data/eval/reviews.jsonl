@@ -1,0 +1,2 @@
+{"input":"Our product guarantees 15% annual returns with no risk.","expected_risk":"high"}
+{"input":"Fees and expenses are described in the attached fee schedule.","expected_risk":"medium"}
