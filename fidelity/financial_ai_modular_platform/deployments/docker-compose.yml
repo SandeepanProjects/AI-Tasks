@@ -1,0 +1,43 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_DB: financial_ai
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+
+  compliance-api:
+    build:
+      context: ..
+      dockerfile: deployments/Dockerfile
+    command: uvicorn financial_compliance.main:app --host 0.0.0.0 --port 8000
+    environment:
+      PYTHONPATH: /workspace/packages/platform-core/src:/workspace/packages/platform-auth/src:/workspace/packages/platform-observability/src:/workspace/packages/ai-llm/src:/workspace/packages/ai-rag/src:/workspace/packages/ai-agents/src:/workspace/packages/ai-guardrails/src:/workspace/applications/financial-compliance/src
+      LLM_PROVIDER: mock
+    ports:
+      - "8001:8000"
+    depends_on: [postgres, redis]
+
+  investment-api:
+    build:
+      context: ..
+      dockerfile: deployments/Dockerfile
+    command: uvicorn investment_intelligence.main:app --host 0.0.0.0 --port 8000
+    environment:
+      PYTHONPATH: /workspace/packages/platform-core/src:/workspace/packages/platform-auth/src:/workspace/packages/platform-observability/src:/workspace/packages/ai-llm/src:/workspace/packages/ai-rag/src:/workspace/packages/ai-agents/src:/workspace/packages/ai-guardrails/src:/workspace/applications/investment-intelligence/src
+      LLM_PROVIDER: mock
+    ports:
+      - "8002:8000"
+    depends_on: [postgres, redis]
+
+volumes:
+  postgres_data:

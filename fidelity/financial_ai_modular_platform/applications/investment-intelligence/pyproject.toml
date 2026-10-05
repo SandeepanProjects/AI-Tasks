@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "investment-intelligence"
+version = "0.1.0"
+description = "Investment market intelligence application."
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "pydantic",
+    "platform-core",
+    "platform-auth",
+    "platform-observability",
+    "ai-llm",
+    "ai-rag",
+    "ai-agents",
+    "ai-guardrails",
+]
+
+
+[tool.setuptools.packages.find]
+where = ["src"]

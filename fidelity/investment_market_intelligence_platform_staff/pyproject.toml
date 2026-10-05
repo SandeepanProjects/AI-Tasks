@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "investment-market-intelligence-platform"
+version = "1.0.0"
+description = "Staff-level evidence-grounded investment market intelligence platform"
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi>=0.115,<1",
+  "uvicorn[standard]>=0.30",
+  "pydantic>=2.9,<3",
+  "pydantic-settings>=2.6,<3",
+  "sqlalchemy[asyncio]>=2.0.36,<3",
+  "asyncpg>=0.30,<1",
+  "pgvector>=0.3.6,<1",
+  "alembic>=1.14,<2",
+  "redis>=5.2,<6",
+  "celery[redis]>=5.4,<6",
+  "langgraph>=0.2.60,<2",
+  "httpx>=0.28,<1",
+  "python-jose[cryptography]>=3.3,<4",
+  "structlog>=24.4,<26",
+  "tenacity>=9,<10",
+  "prometheus-client>=0.21,<1",
+  "orjson>=3.10,<4"
+]
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3,<9",
+  "pytest-asyncio>=0.24,<1",
+  "httpx>=0.28,<1",
+  "ruff>=0.8,<1",
+  "mypy>=1.13,<2"
+]
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+select = ["E","F","I","B","UP"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = false
+ignore_missing_imports = true
