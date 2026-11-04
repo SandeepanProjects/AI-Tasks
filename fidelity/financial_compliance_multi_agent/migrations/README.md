@@ -1,1 +1,0 @@
-Initialize Alembic and create reviewed, versioned migrations before deployment. `create_all` is for local bootstrap only.
