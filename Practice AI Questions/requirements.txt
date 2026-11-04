@@ -1,0 +1,44 @@
+# streamlit
+# wikipedia
+# faiss-cpu
+# numpy
+# sentence-transformers
+# transformers
+# torch
+
+# streamlit
+# wikipedia
+# faiss-cpu
+# numpy
+# sentence-transformers
+# transformers<5.0.0
+# torch
+
+
+# streamlit
+# wikipedia
+# faiss-cpu
+# numpy<2.0.0
+# sentence-transformers
+# transformers<5.0.0
+# torch
+
+# streamlit
+# wikipedia
+# faiss-cpu
+# numpy<2.0.0
+# sentence-transformers
+# transformers<5.0.0
+# torch==2.2.2
+
+streamlit
+wikipedia
+chromadb
+numpy<2.0.0
+sentence-transformers
+transformers<5.0.0
+torch
+fastapi 
+uvicorn
+openai 
+pydantic
