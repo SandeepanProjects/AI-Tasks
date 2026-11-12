@@ -1,0 +1,47 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: compliance
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_ADMIN_PASSWORD:-postgres_local}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:-app_local}
+    ports: ["5432:5432"]
+    healthcheck: {test: ["CMD-SHELL","pg_isready -U postgres -d compliance"], interval: 5s, timeout: 3s, retries: 20}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/postgres-init:/docker-entrypoint-initdb.d:ro
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server","--appendonly","yes"]
+    ports: ["6379:6379"]
+    volumes: [redisdata:/data]
+  migrate:
+    build: .
+    env_file: .env.runtime
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      postgres: {condition: service_healthy}
+  api:
+    build: .
+    env_file: .env.runtime
+    command: ["uvicorn","app.main:app","--host","0.0.0.0","--port","8000"]
+    ports: ["8000:8000"]
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      redis: {condition: service_started}
+  worker:
+    build: .
+    env_file: .env.runtime
+    command: ["celery","-A","app.workers.celery_app:celery","worker","--loglevel=INFO","--concurrency=2","-Q","reviews,outbox"]
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      redis: {condition: service_started}
+  beat:
+    build: .
+    env_file: .env.runtime
+    command: ["celery","-A","app.workers.celery_app:celery","beat","--loglevel=INFO"]
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      redis: {condition: service_started}
+volumes: {pgdata: {}, redisdata: {}}

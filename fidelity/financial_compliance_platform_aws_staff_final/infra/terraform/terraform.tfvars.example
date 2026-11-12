@@ -1,0 +1,6 @@
+aws_region   = "ap-south-1"
+project_name = "financial-compliance"
+environment  = "dev"
+bucket_name  = "replace-with-globally-unique-compliance-documents-bucket"
+# Add only the exact Bedrock model or inference-profile ARNs enabled in your account/region.
+bedrock_model_resource_arns = []
